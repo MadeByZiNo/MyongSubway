@@ -146,7 +146,6 @@ public class SignUpFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         ((SignInActivity)getActivity()).isFragment = false;
-        System.out.println("ㅎㅇ");
     }
 
 }
