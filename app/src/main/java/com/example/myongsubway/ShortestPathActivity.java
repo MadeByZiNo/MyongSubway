@@ -23,7 +23,9 @@ import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -89,6 +91,8 @@ public class ShortestPathActivity extends AppCompatActivity {
             R.mipmap.ic_alarm_foreground;
     final int IC_ANOTHER_SELECTED_ALARM_BUTTON =            // 이미 다른 페이지에서 알람이 등록된 상태의 알람 버튼 아이콘
             R.mipmap.ic_alarm_another_selected_foreground;
+
+    private StationInformationFragment infoFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -375,11 +379,13 @@ public class ShortestPathActivity extends AppCompatActivity {
                         // 로그인된 상태일 때만 즐겨찾기 가능
                         if (graph.isLogined()) {
                             if (isContained()) {
+                                Toast.makeText(ShortestPathContext, "즐겨찾기 해제되었습니다.", Toast.LENGTH_SHORT).show();
                                 // 이미 켜져있을 때, 버튼의 이미지를 빈 별의 이미지로 바꾼다.
                                 bookmarkButton.setBackgroundResource(R.mipmap.ic_star_unselected_foreground);
                                 // 해당 경로의 즐겨찾기를 제거한다.
                                 removeBookmarkedRoute();
                             } else {
+                                Toast.makeText(ShortestPathContext, "즐겨찾기 설정되었습니다.", Toast.LENGTH_SHORT).show();
                                 // 이미 꺼져있을 때, 버튼의 이미지를 노란 별의 이미지로 바꾼다.
                                 bookmarkButton.setBackgroundResource(R.mipmap.ic_star_selected_foreground);
                                 // 해당 경로의 즐겨찾기를 추가한다.
@@ -643,8 +649,16 @@ public class ShortestPathActivity extends AppCompatActivity {
     // 툴바의 액션버튼이 선택됐을때의 기능을 설정하는 메소드
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        onBackPressed();
-        return true;
+        switch (item.getItemId()) {
+            case android.R.id.home :
+                if (infoFragment != null) {
+                    onBackPressed();
+                    infoFragment = null;
+                }
+                onBackPressed();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     // 경로를 계산하는 다익스트라 알고리즘
@@ -914,32 +928,43 @@ public class ShortestPathActivity extends AppCompatActivity {
         return output;
     }
 
+    // StationInformationFragment 에서 뒤로가기 버튼을 누르면 실행되는 메소드
+    // FragmentManager 에서 프래그먼트를 제거하고 툴바를 보이게 만든다.
+    public void removeInfoFragment(StationInformationFragment infoFrag) {
+        getSupportFragmentManager().beginTransaction().remove(infoFrag).commit();
+
+        showToolbar();
+        hideInfoFragmentContainer();
+    }
+
+    // 툴바를 보이게 만든다.
+    public void showToolbar() {
+        getSupportActionBar().show();
+    }
+
+    // 역정보 프래그먼트가 나타나는 레이아웃을 가린다.
+    public void hideInfoFragmentContainer() {
+        FrameLayout infoLayoutContainer = findViewById(R.id.station_info_fragment_container);
+        infoLayoutContainer.setVisibility(View.GONE);
+    }
+
     // 역정보 프래그먼트를 띄우는 메소드
     public void generateStationInformationFragment(CustomAppGraph.Vertex vertex) {
+        // 툴바를 가린다.
+        getSupportActionBar().hide();
+
+        // 역정보 프래그먼트가 나타나는 레이아웃을 보이게 만든다.
+        FrameLayout infoLayoutContainer = findViewById(R.id.station_info_fragment_container);
+        infoLayoutContainer.setVisibility(View.VISIBLE);
+
         // 역정보 프래그먼트를 띄운다.
-        StationInformationFragment frag = new StationInformationFragment(vertex, graph, true);
+        infoFragment = new StationInformationFragment(vertex, graph, true);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 
-        transaction.replace(R.id.station_info_fragment_container, frag);
+        transaction.add(R.id.station_info_fragment_container, infoFragment);
         transaction.addToBackStack(null);
         transaction.commit();
-
-        // 역정보 프래그먼트 밑에 문의버튼을 보이게한다.
-        Button infoReportButton = findViewById(R.id.infoReportButton);
-        infoReportButton.setVisibility(View.VISIBLE);
-        infoReportButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent email = new Intent(Intent.ACTION_SEND);
-                email.setType("plain/text");
-                String[] address = {"email@address.com"};
-                email.putExtra(Intent.EXTRA_EMAIL, address);
-                email.putExtra(Intent.EXTRA_SUBJECT, "");
-                email.putExtra(Intent.EXTRA_TEXT, "잘못된 정보를 입력해주세요.");
-                startActivity(email);
-            }
-        });
     }
     
     // 확대경로 프래그먼트를 띄우는 메소드
