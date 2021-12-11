@@ -64,7 +64,7 @@ public class BoardReadActivity extends AppCompatActivity implements View.OnClick
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState); 
         setContentView(R.layout.activity_board_read);
 
         imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
